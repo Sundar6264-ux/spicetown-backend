@@ -1184,7 +1184,12 @@ td.flag {
 
 .chat-widget-toggle {
   position: fixed;
-  bottom: 1.5rem;
+  /* env(safe-area-inset-*) resolves to 0 on a plain browser/desktop (no
+     notch/home-indicator to clear) and to the real device inset inside the
+     Capacitor app, which renders the WebView edge-to-edge behind the status
+     bar/notch/home-indicator by default - without this, a fixed bottom-right
+     bubble sits uncomfortably close to (or under) the home indicator. */
+  bottom: calc(1.5rem + env(safe-area-inset-bottom));
   right: 1.5rem;
   width: 56px;
   height: 56px;
@@ -1207,7 +1212,7 @@ td.flag {
 
 .chat-widget-panel {
   position: fixed;
-  bottom: 5.75rem;
+  bottom: calc(5.75rem + env(safe-area-inset-bottom));
   right: 1.5rem;
   width: 380px;
   max-width: calc(100vw - 2rem);
@@ -1277,7 +1282,7 @@ td.flag {
     align-items: center;
     justify-content: center;
     position: fixed;
-    top: 0.7rem;
+    top: calc(0.7rem + env(safe-area-inset-top));
     left: 0.7rem;
     z-index: 60;
     width: 40px;
@@ -1310,6 +1315,8 @@ td.flag {
     inset: 0 auto 0 0;
     width: 78vw;
     max-width: 280px;
+    padding-top: calc(1.25rem + env(safe-area-inset-top));
+    padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
     transform: translateX(-100%);
     transition: transform 0.2s ease;
     z-index: 50;
@@ -1325,7 +1332,7 @@ td.flag {
 
   .main {
     max-width: 100%;
-    padding: 3.75rem 1rem 3rem;
+    padding: calc(3.75rem + env(safe-area-inset-top)) 1rem calc(3rem + env(safe-area-inset-bottom));
   }
 
   .page-header h1 {
@@ -1455,7 +1462,7 @@ td.flag {
     height: calc(100vh - 6.5rem);
     max-height: none;
     right: 0.75rem;
-    bottom: 4.75rem;
+    bottom: calc(4.75rem + env(safe-area-inset-bottom));
   }
 
   /* Collapse is a desktop-only concept - the mobile sidebar is already an
@@ -1468,7 +1475,7 @@ td.flag {
   }
 
   .cart-button {
-    top: 0.7rem;
+    top: calc(0.7rem + env(safe-area-inset-top));
     right: 0.7rem;
     width: 40px;
     height: 40px;
@@ -1524,7 +1531,7 @@ td.flag {
 
 .cart-button {
   position: fixed;
-  top: 1.25rem;
+  top: calc(1.25rem + env(safe-area-inset-top));
   right: 1.5rem;
   width: 48px;
   height: 48px;

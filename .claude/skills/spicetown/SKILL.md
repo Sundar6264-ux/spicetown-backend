@@ -1753,6 +1753,56 @@ below), and gets native plugin access (camera, push, filesystem/share) via JS.
   TanStack Query/offline-caching layer - these are Phase 2/3 per the plan discussed with the user,
   not started this session.
 
+## Session: mobile "looks clumsy" - safe-area insets, and a real Android APK distribution path
+
+Direct follow-up. The user tested the actual iOS Simulator on their own MacBook (not this
+machine) and reported the app looked "clumsy, not neat." Two real, concrete fixes came out of
+investigating, both shipped without needing to see their exact screenshot (deterministic, spec-
+level defects, not a subjective guess):
+
+- **`index.html` had no `viewport-fit=cover`** - required for `env(safe-area-inset-*)` CSS to
+  resolve to real values at all on iOS; without it those all evaluate to 0 even on a notched
+  device. Added globally (harmless on web/desktop - insets are just 0 there too).
+- **Every fixed-position UI chrome element ignored safe areas**: `.sidebar-toggle` (hamburger),
+  `.cart-button`, `.chat-widget-toggle`/`.chat-widget-panel`, the mobile `.sidebar` drawer itself,
+  and `.main`'s top/bottom padding all used bare `rem` offsets. Capacitor renders the WebView
+  edge-to-edge behind the status bar/notch/Dynamic Island/home-indicator by default (unlike
+  Safari, which reserves that space automatically) - so every one of those was liable to sit
+  under, or uncomfortably close to, the notch or home indicator on a real device. Fixed by
+  wrapping each offset in `calc(<original> + env(safe-area-inset-<side>))` - resolves to the
+  original value on web/desktop (env() = 0 there) and the real device inset on native. **Any new
+  fixed-position element added to this app in the future needs the same treatment** - it's easy to
+  forget since it looks completely fine in a non-notched simulator or in a browser, only showing
+  up as broken on a real modern iPhone.
+- **Verification limits, stated plainly rather than overclaimed**: could not actually drive a real
+  login through either machine's simulator - `osascript`/System Events keystroke automation failed
+  with error -10810 (Accessibility permission not granted to this session, and that permission
+  can't be granted non-interactively/remotely); manually seeding a valid session into the
+  Capacitor Preferences plugin's on-disk storage was attempted but abandoned once it became a
+  rabbit hole (its iOS storage location/format wasn't quickly identifiable - not the plain
+  `UserDefaults` plist location a first guess would suggest). Confirmed instead: the build compiles
+  and installs cleanly, the login screen still renders correctly (re-screenshotted after the fix),
+  and the CSS change itself is a deterministic, spec-level fix (verified by reading the actual
+  `env()` mechanics), not something that needs a screenshot to know it's correct. Real interactive
+  verification (does a logged-in page actually look right past login) depends on the user's own
+  hands-on testing - don't claim to have visually confirmed post-login screens without it.
+- **Real Android APK distribution path, since the user wanted something installable without going
+  through Xcode at all**: this Mac had no JDK/Android SDK - installed via
+  `brew install openjdk@21 android-commandlinetools` (JDK 17 was tried first and failed; Capacitor
+  8's Android project needs JDK 21), `sdkmanager --licenses` + `platform-tools`/
+  `platforms;android-36`/`build-tools;36.0.0` (versions read from `android/variables.gradle`,
+  don't guess), then `echo "sdk.dir=$ANDROID_HOME" > android/local.properties` (gitignored, never
+  commit) and `./gradlew assembleDebug`. Produces a real, self-signed (debug-key) installable
+  `.apk` at `android/app/build/outputs/apk/debug/app-debug.apk` - no Google Play account, no
+  Apple-style device-signing dance, installable on any Android phone directly (with "install from
+  unknown sources" allowed for that one file). Delivered to the user via `SendUserFile` rather than
+  hosting it anywhere. **No equivalent shortcut exists for iOS** - a real installable-without-Xcode
+  iOS binary needs either a paid Apple Developer Program membership (for TestFlight/ad-hoc
+  distribution) or Xcode's own device-pairing flow; there's no unsigned-IPA-style option the way
+  Android's debug APK works. Re-run `assembleDebug` and re-send after any frontend change meant for
+  Android testing - a stale APK's debug signature will refuse to reinstall over a differently-
+  signed one from a previous build, so mention that if the user reports an install failure.
+
 ## Keeping this skill current
 
 This file should be updated whenever a new non-obvious gotcha is found, a new major feature ships,
