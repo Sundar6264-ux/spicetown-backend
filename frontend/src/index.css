@@ -1,0 +1,1548 @@
+:root {
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --sidebar-bg: #1c1c1e;
+  --sidebar-text: #a1a1aa;
+  --sidebar-text-active: #ffffff;
+  --sidebar-border: #2c2c2e;
+
+  --accent: #d92d3f;
+  --accent-hover: #c22536;
+
+  /* Deliberately a different hue from --accent - the cart button needs to
+     stand out from the app's many red primary-action buttons/links/error
+     text, not blend into them. */
+  --cart-accent: #2563eb;
+  --cart-accent-hover: #1d4ed8;
+
+  --bg: #f5f5f6;
+  --card-bg: #ffffff;
+  --border: #e4e4e7;
+
+  --text: #18181b;
+  --text-muted: #71717a;
+
+  --success-bg: #dcfce7;
+  --success-text: #15803d;
+  --failed-bg: #fee2e2;
+  --failed-text: #b91c1c;
+  --running-bg: #fef3c7;
+  --running-text: #b45309;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* --- Sidebar --- */
+
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 0.9rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0 0.4rem 1.25rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+
+.sidebar-brand img {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+}
+
+.sidebar-brand span {
+  color: var(--sidebar-text-active);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.sidebar-collapse-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 0.2rem 0.35rem;
+  border-radius: 4px;
+}
+
+.sidebar-collapse-btn:hover:not(:disabled) {
+  background: #28282a;
+  color: var(--sidebar-text-active);
+}
+
+.sidebar-expand-btn {
+  display: none;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sidebar-nav a {
+  display: block;
+  padding: 0.55rem 0.7rem;
+  border-radius: 6px;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.sidebar-nav a:hover {
+  background: #28282a;
+  color: var(--sidebar-text-active);
+}
+
+.sidebar-nav a.active {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.sidebar-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.55rem 0.7rem;
+  border-radius: 6px;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sidebar-group-toggle:hover:not(:disabled) {
+  background: #28282a;
+  color: var(--sidebar-text-active);
+}
+
+.sidebar-subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding-left: 1.1rem;
+  margin-bottom: 0.2rem;
+}
+
+.sidebar-subnav a {
+  font-size: 0.86rem;
+}
+
+.sidebar-external-link {
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--sidebar-border);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 0.6rem 0.4rem 0;
+  font-size: 0.75rem;
+  color: #6b6b70;
+}
+
+/* --- Main content --- */
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 1.75rem 2rem 4rem;
+  max-width: 1280px;
+}
+
+.page-header {
+  margin-bottom: 1.25rem;
+}
+
+.page-header h1 {
+  margin: 0 0 0.2rem;
+  font-size: 1.4rem;
+  color: var(--text);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.1rem;
+  align-items: start;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.1rem 1.3rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.card h2 {
+  margin-top: 0;
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0;
+}
+
+/* Without this, the generic button:hover rule below fills it with a solid
+   dark-red background (it's a real <button>) while the text stays red too -
+   a red-on-red block. :not(:disabled) here matches that rule's own
+   specificity plus one more class, so this reliably wins instead of relying
+   on source order. */
+.link-button:hover:not(:disabled) {
+  background: none;
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+/* Same visual as a primary <button>, but for an <a> (external link, opens in
+   a new tab) - the generic button{} rule only targets <button> elements. */
+.button-link {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1.05rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.button-link:hover {
+  background: var(--accent-hover);
+}
+
+.job-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.job-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.job-row:last-child {
+  border-bottom: none;
+}
+
+.job-name {
+  font-weight: 600;
+  min-width: 150px;
+  color: var(--text);
+}
+
+.job-time {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.job-detail {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  flex-basis: 100%;
+}
+
+.job-detail-columns {
+  font-size: 0.78rem;
+  margin-top: 0.3rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.pill {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.pill-success {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.pill-failed {
+  background: var(--failed-bg);
+  color: var(--failed-text);
+}
+
+.pill-running {
+  background: var(--running-bg);
+  color: var(--running-text);
+}
+
+.upload-form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.delivery-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.88rem;
+  margin-top: 0.9rem;
+}
+
+.delivery-vendor-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  max-width: 24rem;
+}
+
+.delivery-vendor-select-label {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.transfer-direction-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.vendor-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.vendor-picker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.vendor-chip {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border: none;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vendor-picker-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.4rem;
+  background: var(--card-bg);
+}
+
+.vendor-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.vendor-picker-item:hover {
+  background: #eef4fb;
+}
+
+/* --- Reconciliation: log-purchase form + item picker --- */
+
+.recon-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  align-items: flex-end;
+  margin-top: 0.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.recon-form-field {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.82rem;
+  gap: 0.3rem;
+  color: var(--text-muted);
+  min-width: 160px;
+}
+
+.recon-form-field-wide {
+  min-width: 260px;
+  flex: 1 1 260px;
+}
+
+.recon-form-submit {
+  align-self: flex-end;
+}
+
+.recon-bulk-upload {
+  margin-top: 1rem;
+}
+
+.recon-bulk-upload summary {
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.recon-bulk-upload-date {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.82rem;
+  gap: 0.3rem;
+  color: var(--text-muted);
+}
+
+.recon-demo {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.recon-demo summary {
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.recon-demo-try {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  background: var(--card-bg);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.recon-demo-try label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  max-width: 16rem;
+}
+
+.recon-demo-try input {
+  width: 100%;
+}
+
+.text-negative {
+  color: var(--failed-text);
+  font-weight: 700;
+}
+
+.text-positive {
+  color: var(--success-text);
+  font-weight: 700;
+}
+
+.digest-headline {
+  font-weight: 600;
+  margin: 0.5rem 0 0.9rem;
+}
+
+.digest-stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.85rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.9rem;
+}
+
+.digest-section {
+  margin-bottom: 0.75rem;
+}
+
+.digest-section h4 {
+  margin: 0 0 0.15rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.digest-section p {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.item-picker {
+  position: relative;
+}
+
+.item-picker-results {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem;
+}
+
+.item-picker-results li button {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.item-picker-results li button:hover:not(:disabled) {
+  background: #eef4fb;
+}
+
+.item-picker-status {
+  font-size: 0.8rem;
+  margin: 0.3rem 0 0;
+}
+
+.item-picker-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.15s ease;
+}
+
+.progress-bar-fill-indeterminate {
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-hover) 50%, var(--accent) 100%);
+  background-size: 200% 100%;
+  animation: progress-indeterminate 1.1s linear infinite;
+}
+
+@keyframes progress-indeterminate {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+.date-range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.1rem;
+  margin: 0.75rem 0;
+}
+
+.date-range label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.82rem;
+  gap: 0.3rem;
+  color: var(--text-muted);
+}
+
+/* Matches .date-range label's exact rhythm (one label-styled text line,
+   then one row of control(s) directly below it) so a multi-input group like
+   the lookback date range sits at the same height as a plain single-input
+   label next to it, instead of looking taller/boxed. */
+.date-range-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.date-range-group-label {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.date-range-group-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-range-separator {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.download-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+input,
+select {
+  background: #fff;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.88rem;
+  font-family: inherit;
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+input[type="file"] {
+  border: none;
+  padding: 0;
+  color: var(--text-muted);
+}
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1.05rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+button:disabled {
+  background: #d4d4d8;
+  color: #a1a1aa;
+  cursor: not-allowed;
+}
+
+.success {
+  color: var(--success-text);
+  margin-top: 0.75rem;
+}
+
+.error {
+  color: var(--failed-text);
+  margin-top: 0.75rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 0.75rem;
+  max-height: 520px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.84rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+  color: var(--text);
+}
+
+th:last-child,
+td:last-child {
+  border-right: none;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  background: #fafafa;
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Explicit light background + explicit text color on hover, so a row's
+   numbers stay clearly readable on top of it instead of relying on whatever
+   color happens to be inherited. */
+tbody tr:hover td {
+  background: #eef4fb;
+  color: var(--text);
+}
+
+tbody tr.sp-row-selected:hover td {
+  background: #fbe4e7;
+}
+
+td.flag {
+  color: var(--failed-text);
+  font-weight: 700;
+}
+
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable-th:hover {
+  background: #eef4fb;
+}
+
+.sort-caret {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.sort-caret-active {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.table-search {
+  margin-top: 0.75rem;
+  max-width: 320px;
+}
+
+/* --- InfoBlock (brief + expandable full description) --- */
+
+.info-block-brief {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.25rem;
+}
+
+.info-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 0.05rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* :not(:disabled) matches (and beats) the generic button:hover rule's own
+   specificity, which otherwise wins and paints this red regardless of
+   source order - a real bug found once already this session, see
+   .link-button above for the same fix. */
+.info-toggle:hover:not(:disabled) {
+  background: #eef4fb;
+  border-color: #c7dcf2;
+}
+
+.info-block-full {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  margin: 0 0 0.5rem;
+}
+
+/* --- Help page --- */
+
+.help-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.help-toc button {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  width: auto;
+  cursor: pointer;
+}
+
+.help-toc button:hover:not(:disabled) {
+  background: #eef4fb;
+  border-color: #c7dcf2;
+  color: var(--accent-hover);
+}
+
+.help-section {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-top: 0.9rem;
+  overflow: hidden;
+}
+
+.help-section summary {
+  cursor: pointer;
+  padding: 0.9rem 1.1rem;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--card-bg);
+  list-style: none;
+}
+
+.help-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.help-section summary::before {
+  content: "▸";
+  display: inline-block;
+  width: 1rem;
+  color: var(--text-muted);
+}
+
+.help-section[open] summary::before {
+  content: "▾";
+}
+
+.help-section-body {
+  padding: 0 1.1rem 1.1rem;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.help-section-body h4 {
+  margin: 1rem 0 0.35rem;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.help-section-body h4:first-child {
+  margin-top: 0.5rem;
+}
+
+.help-section-body ul {
+  margin: 0.25rem 0;
+  padding-left: 1.2rem;
+}
+
+.help-section-body li {
+  margin-bottom: 0.3rem;
+}
+
+.help-section-body code {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+  font-size: 0.85em;
+}
+
+/* --- Supplier Projection --- */
+
+.sp-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.sp-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.sp-value-link {
+  background: none;
+  border: none;
+  padding: 0.1rem 0.3rem;
+  margin: -0.1rem -0.3rem;
+  border-radius: 4px;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.sp-value-link:hover:not(:disabled) {
+  background: #eef4fb;
+}
+
+.sp-caret {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+.sp-container-hint {
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.sp-row-selected {
+  background: #fff4f5;
+}
+
+.sp-weekly-row td {
+  background: var(--bg);
+  padding: 0.75rem 1rem;
+  white-space: normal;
+}
+
+.sp-weekly-table {
+  width: auto;
+  min-width: 320px;
+  font-size: 0.8rem;
+}
+
+.sp-weekly-table th,
+.sp-weekly-table td {
+  padding: 0.3rem 0.6rem;
+}
+
+/* --- Purchase Order Builder / Delivery Review (shared) --- */
+
+.review-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.po-qty-input {
+  width: 5.5rem;
+  text-align: right;
+}
+
+/* --- Purchase Order Cart --- */
+
+.po-cart-section {
+  margin-top: 1.5rem;
+  padding-top: 0.5rem;
+}
+
+.po-cart-section + .po-cart-section {
+  border-top: 1px solid var(--border);
+}
+
+.po-add-item-form {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+.po-cart-supplier-estimate {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+}
+
+.po-cart-grand-total {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--border);
+  font-size: 0.95rem;
+}
+
+.qty-mismatch {
+  border-color: var(--failed-text);
+  background: var(--failed-bg);
+}
+
+.qty-mismatch-warning {
+  color: var(--failed-text);
+  font-size: 0.72rem;
+  margin-top: 0.25rem;
+  text-align: right;
+}
+
+/* --- Ask Inventory Bot ---
+   The input stays pinned to the bottom of the page as you scroll, like any
+   chat product - the card is given enough min-height for that to have room
+   to happen, the thread is the part that actually scrolls, and the form
+   sticks to the card's bottom edge (matches the sidebar's own sticky/top:0
+   pattern above, just anchored to the opposite edge). */
+
+.ask-bot {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.ask-bot-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.ask-bot-example {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.82rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.ask-bot-example:hover:not(:disabled) {
+  background: var(--bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ask-bot-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.25rem 0.25rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.ask-bot-message {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+}
+
+.ask-bot-user {
+  align-items: flex-end;
+  align-self: flex-end;
+}
+
+.ask-bot-assistant {
+  align-items: flex-start;
+  align-self: flex-start;
+}
+
+.ask-bot-bubble {
+  border-radius: 12px;
+  padding: 0.6rem 0.85rem;
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
+.ask-bot-user .ask-bot-bubble {
+  background: var(--accent);
+  color: #fff;
+}
+
+.ask-bot-assistant .ask-bot-bubble {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.ask-bot-meta {
+  font-size: 0.72rem;
+  margin-top: 0.25rem;
+}
+
+.ask-bot-form {
+  display: flex;
+  gap: 0.5rem;
+  position: sticky;
+  bottom: 0;
+  background: var(--card-bg);
+  padding-top: 0.6rem;
+}
+
+.ask-bot-form input {
+  flex: 1;
+}
+
+/* --- Chat widget: floating bubble present on every page, opens a compact
+   panel above it - the app-wide entry point to Ask Inventory Bot. --- */
+
+.chat-widget-toggle {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  z-index: 60;
+}
+
+.chat-widget-toggle:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.chat-widget-panel {
+  position: fixed;
+  bottom: 5.75rem;
+  right: 1.5rem;
+  width: 380px;
+  max-width: calc(100vw - 2rem);
+  height: 560px;
+  max-height: calc(100vh - 8rem);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 59;
+}
+
+.chat-widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text-active);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.chat-widget-close {
+  background: none;
+  border: none;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.2rem;
+}
+
+.chat-widget-close:hover:not(:disabled) {
+  background: none;
+  color: var(--sidebar-text-active);
+}
+
+.chat-widget-body {
+  flex: 1;
+  min-height: 0;
+  padding: 0.9rem 1rem;
+  overflow: hidden;
+}
+
+.chat-widget-body .ask-bot {
+  padding: 0;
+}
+
+/* --- Mobile nav toggle (hidden on desktop; the sidebar is always visible there) --- */
+
+.sidebar-toggle {
+  display: none;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+/* --- Mobile layout --- */
+
+@media (max-width: 768px) {
+  .sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0.7rem;
+    left: 0.7rem;
+    z-index: 60;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid var(--sidebar-border);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text-active);
+    font-size: 1.1rem;
+    padding: 0;
+  }
+
+  /* Same generic-button-hover-wins-by-default issue as the other fixes
+     above - without this it flashes red instead of matching the dark
+     sidebar it sits on. */
+  .sidebar-toggle:hover:not(:disabled) {
+    background: #28282a;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 40;
+  }
+
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 78vw;
+    max-width: 280px;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    z-index: 50;
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .app {
+    display: block;
+  }
+
+  .main {
+    max-width: 100%;
+    padding: 3.75rem 1rem 3rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: 0.9rem 1rem;
+  }
+
+  .date-range {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .recon-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .recon-form-field,
+  .recon-form-field-wide {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .date-range label {
+    width: 100%;
+  }
+
+  .date-range input,
+  .date-range select {
+    width: 100%;
+  }
+
+  .date-range-group-inputs {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .date-range-group-inputs input {
+    width: 100%;
+  }
+
+  .date-range-separator {
+    display: none;
+  }
+
+  .upload-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .download-buttons {
+    flex-direction: column;
+  }
+
+  button {
+    width: 100%;
+  }
+
+  .card-header button,
+  .link-button,
+  .sp-toolbar-actions button,
+  .job-row button {
+    width: auto;
+  }
+
+  th,
+  td {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.78rem;
+  }
+
+  .sp-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sp-toolbar-actions {
+    justify-content: space-between;
+  }
+
+  .review-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .po-qty-input {
+    width: 100%;
+  }
+
+  .ask-bot-message {
+    max-width: 100%;
+  }
+
+  .ask-bot-form {
+    flex-direction: column;
+  }
+
+  .chat-widget-panel {
+    width: calc(100vw - 1.5rem);
+    height: calc(100vh - 6.5rem);
+    max-height: none;
+    right: 0.75rem;
+    bottom: 4.75rem;
+  }
+
+  /* Collapse is a desktop-only concept - the mobile sidebar is already an
+     overlay drawer opened/closed with the hamburger above, so this toggle
+     (and the "expand" tab it would leave behind) has nothing useful to do
+     here. */
+  .sidebar-collapse-btn,
+  .sidebar-expand-btn {
+    display: none !important;
+  }
+
+  .cart-button {
+    top: 0.7rem;
+    right: 0.7rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+}
+
+/* --- Desktop sidebar collapse - remembered in localStorage, independent of
+   the mobile drawer above. Collapsing shrinks the sidebar to nothing (rather
+   than an icon rail) since none of its nav items have icons to fall back
+   on; a small fixed tab takes its place to bring it back. --- */
+
+@media (min-width: 769px) {
+  .sidebar.sidebar-collapsed {
+    width: 0;
+    padding: 0;
+    border-right: none;
+    overflow: hidden;
+  }
+
+  /* A tab on the left edge, vertically centered rather than pinned to the
+     top-left corner - the corner is where every page's own title/heading
+     text starts, and a top-left button there sat right on top of it. */
+  .sidebar-expand-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    z-index: 45;
+    width: 22px;
+    height: 56px;
+    border-radius: 0 8px 8px 0;
+    border: 1px solid var(--sidebar-border);
+    border-left: none;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text-active);
+    font-size: 0.9rem;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .sidebar-expand-btn:hover:not(:disabled) {
+    background: #28282a;
+  }
+}
+
+/* --- Purchase order cart button: fixed top-right on every page, mirrors
+   the chat widget bubble's fixed-bubble pattern but in the opposite
+   corner and with an item-count badge. --- */
+
+.cart-button {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.5rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: var(--cart-accent);
+  color: #fff;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  z-index: 55;
+}
+
+.cart-button:hover:not(:disabled) {
+  background: var(--cart-accent-hover);
+}
+
+.cart-button-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  /* The app's red accent, reused here on purpose - a count badge is meant
+     to grab attention the way the blue button body deliberately doesn't. */
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg);
+}
