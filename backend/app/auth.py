@@ -12,9 +12,10 @@ own password by providing their current one.
 
 import datetime as dt
 import secrets
+from typing import Optional
 
 import bcrypt
-from fastapi import Cookie, Depends, HTTPException, Response
+from fastapi import Cookie, Depends, Header, HTTPException, Response
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
@@ -74,14 +75,30 @@ def clear_session_cookie(response: Response) -> None:
     response.delete_cookie(key=SESSION_COOKIE_NAME, path="/")
 
 
+def extract_bearer_token(authorization: Optional[str]) -> Optional[str]:
+    """Pulls the token out of an `Authorization: Bearer <token>` header - the
+    mobile app's auth path (see /api/auth/mobile-login), which can't rely on
+    the httpOnly session cookie the web app uses. Same underlying
+    `user_sessions` token either way, just delivered differently.
+    """
+    if not authorization:
+        return None
+    scheme, _, value = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not value:
+        return None
+    return value.strip()
+
+
 def get_current_user(
     session_token: str = Cookie(default=None, alias=SESSION_COOKIE_NAME),
+    authorization: Optional[str] = Header(default=None),
     db: Session = Depends(get_db),
 ) -> User:
-    if not session_token:
+    token = session_token or extract_bearer_token(authorization)
+    if not token:
         raise HTTPException(status_code=401, detail="Not logged in")
 
-    session = db.get(UserSession, session_token)
+    session = db.get(UserSession, token)
     if session is None or session.expires_at < utcnow():
         raise HTTPException(status_code=401, detail="Session expired or invalid")
 

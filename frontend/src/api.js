@@ -1,14 +1,33 @@
+import { isNative, getCachedToken, setToken, clearToken } from "./mobileAuth";
+import { saveOrShareBlob } from "./downloadOrShare";
+
+export { restoreToken } from "./mobileAuth";
+
 // Explicit VITE_API_BASE always wins. Otherwise: in `npm run dev` (separate
 // frontend/backend processes) default to localhost:8000. In a production
 // build served *by* the backend itself (single process, e.g. behind Tailscale),
 // default to "" (relative) so requests follow whatever host/origin the page
-// was actually loaded from, rather than hardcoding "localhost".
+// was actually loaded from, rather than hardcoding "localhost". The mobile
+// app bundles the same build but always talks to a fixed remote API, so it
+// needs VITE_API_BASE set explicitly at build time (see mobile build docs) -
+// "" would mean "call capacitor://localhost", which isn't a real API.
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? "http://localhost:8000" : "");
 
+const LOGIN_PATHS = ["/api/auth/login", "/api/auth/mobile-login"];
+
 async function request(path, options = {}) {
-  // credentials: "include" is required in both dev (cross-origin, :5173 -> :8000)
-  // and prod (same-origin) for the session cookie to actually be sent/accepted.
-  const res = await fetch(`${API_BASE}${path}`, { ...options, credentials: "include" });
+  const opts = { ...options };
+  // Native (Capacitor): no session cookie - send the stored bearer token
+  // instead. Web: unchanged, credentials: "include" sends the httpOnly
+  // session cookie in both dev (cross-origin :5173 -> :8000) and prod
+  // (same-origin).
+  if (isNative()) {
+    const token = getCachedToken();
+    opts.headers = { ...(opts.headers || {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  } else {
+    opts.credentials = "include";
+  }
+  const res = await fetch(`${API_BASE}${path}`, opts);
   if (!res.ok) {
     let detail = res.statusText;
     try {
@@ -17,10 +36,10 @@ async function request(path, options = {}) {
     } catch {
       // response wasn't JSON; fall back to statusText
     }
-    // A 401 on any call other than the login attempt itself means the session
+    // A 401 on any call other than a login attempt itself means the session
     // expired or was revoked (e.g. an admin reset this user's password) -
     // bounce back to the login screen instead of leaving stale/broken pages up.
-    if (res.status === 401 && path !== "/api/auth/login") {
+    if (res.status === 401 && !LOGIN_PATHS.includes(path)) {
       window.dispatchEvent(new Event("auth:unauthorized"));
     }
     const error = new Error(detail);
@@ -49,11 +68,20 @@ async function patchJSON(path, body) {
 }
 
 export async function login(username, password) {
+  if (isNative()) {
+    const result = await postJSON("/api/auth/mobile-login", { username, password });
+    await setToken(result.token);
+    return result;
+  }
   return postJSON("/api/auth/login", { username, password });
 }
 
 export async function logout() {
-  return postJSON("/api/auth/logout", {});
+  try {
+    return await postJSON("/api/auth/logout", {});
+  } finally {
+    if (isNative()) await clearToken();
+  }
 }
 
 export async function getMe() {
@@ -107,7 +135,12 @@ export function uploadInventoryWithProgress(file, onProgress) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_BASE}/api/inventory/upload`);
-    xhr.withCredentials = true;
+    if (isNative()) {
+      const token = getCachedToken();
+      if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    } else {
+      xhr.withCredentials = true;
+    }
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
         onProgress(Math.round((e.loaded / e.total) * 100));
@@ -170,14 +203,7 @@ export async function exportPurchaseOrderPdf(supplier, items) {
   const blob = await res.blob();
   const match = (res.headers.get("Content-Disposition") || "").match(/filename="?([^"]+)"?/);
   const filename = match ? match[1] : `purchase-order-${supplier}.pdf`;
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.URL.revokeObjectURL(url);
+  await saveOrShareBlob(blob, filename);
 }
 
 export async function getCart() {
@@ -238,14 +264,7 @@ async function downloadFile(path, fallbackFilename) {
   const blob = await res.blob();
   const match = (res.headers.get("Content-Disposition") || "").match(/filename="?([^"]+)"?/);
   const filename = match ? match[1] : fallbackFilename;
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.URL.revokeObjectURL(url);
+  await saveOrShareBlob(blob, filename);
 }
 
 export async function downloadSales(start, end, format) {
@@ -309,21 +328,14 @@ export async function searchItems(query, supplier) {
   return res.json();
 }
 
-export function downloadPurchaseLogSampleCsv() {
+export async function downloadPurchaseLogSampleCsv() {
   const rows = [
     "item name,supplier,quantity,unit cost,received date,notes",
     "Nanak Rasmalai 12 Pcs/1kg,ABC Distributors,12,18.50,2026-08-20,Invoice #4521",
     "Haldiram's Gulab Jamun (Can) 1Kg,ABC Distributors,6,9.75,2026-08-20,Invoice #4521",
   ].join("\n");
   const blob = new Blob([rows], { type: "text/csv" });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "purchase-log-sample.csv";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.URL.revokeObjectURL(url);
+  await saveOrShareBlob(blob, "purchase-log-sample.csv");
 }
 
 export async function logPurchase(entry) {
@@ -337,7 +349,12 @@ export function uploadPurchaseLogWithProgress(file, defaultReceivedDate, onProgr
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_BASE}/api/reconciliation/purchases/upload`);
-    xhr.withCredentials = true;
+    if (isNative()) {
+      const token = getCachedToken();
+      if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    } else {
+      xhr.withCredentials = true;
+    }
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
         onProgress(Math.round((e.loaded / e.total) * 100));

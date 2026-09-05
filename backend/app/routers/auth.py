@@ -1,7 +1,7 @@
 import json
 from typing import List, Optional
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
+from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -11,6 +11,7 @@ from app.auth import (
     create_session,
     delete_all_sessions_for_user,
     delete_session,
+    extract_bearer_token,
     get_current_user,
     hash_password,
     require_admin,
@@ -82,14 +83,36 @@ def login(body: LoginRequest, response: Response, db: Session = Depends(get_db))
     return _user_out(user)
 
 
+@router.post("/mobile-login")
+def mobile_login(body: LoginRequest, db: Session = Depends(get_db)):
+    """Same credential check as /login, but for the mobile app: no cookie is
+    set (a Capacitor WebView doesn't carry it reliably, and biometric re-auth
+    needs an explicit value to store in Keychain/Keystore anyway) - the raw
+    session token is returned in the body instead, sent back by the client as
+    `Authorization: Bearer <token>` on every request. Deliberately a separate
+    endpoint rather than adding `token` to /login's response: doing that
+    there would hand any web-page XSS a readable-by-JS token where today only
+    an httpOnly cookie exists, a real regression to the web app's security
+    model for no benefit to it.
+    """
+    user = db.execute(select(User).where(User.username == body.username)).scalar_one_or_none()
+    if user is None or not verify_password(body.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+
+    token, expires_at = create_session(db, user.id)
+    return {"token": token, "expires_at": expires_at.isoformat(), **_user_out(user)}
+
+
 @router.post("/logout")
 def logout(
     response: Response,
     db: Session = Depends(get_db),
     session_token: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME),
+    authorization: Optional[str] = Header(default=None),
 ):
-    if session_token:
-        delete_session(db, session_token)
+    token = session_token or extract_bearer_token(authorization)
+    if token:
+        delete_session(db, token)
     clear_session_cookie(response)
     return {"status": "ok"}
 

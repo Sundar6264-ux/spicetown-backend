@@ -1400,6 +1400,24 @@ td.flag {
     width: auto;
   }
 
+  /* Two real, verifiable (not cosmetic-guess) mobile-web bugs, not just
+     tighter spacing: (1) any input/select under 16px triggers WebKit's
+     auto-zoom-on-focus on iOS - this hits every text/date/search field in
+     the app on an iPhone browser or inside the Capacitor app (same WKWebView
+     engine) unless raised here; desktop keeps its tighter 0.88rem sizing,
+     this only widens it under the mobile breakpoint. (2) Apple's Human
+     Interface Guidelines minimum tappable target is 44px - most buttons and
+     inputs here fall well under that at their default padding. */
+  input,
+  select {
+    font-size: 1rem;
+    min-height: 44px;
+  }
+
+  button {
+    min-height: 44px;
+  }
+
   th,
   td {
     padding: 0.4rem 0.55rem;

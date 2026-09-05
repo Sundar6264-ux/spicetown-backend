@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { getMe, login as apiLogin, logout as apiLogout } from "./api";
+import { getMe, login as apiLogin, logout as apiLogout, restoreToken } from "./api";
 
 const AuthContext = createContext(null);
 
@@ -9,6 +9,11 @@ export function AuthProvider({ children }) {
 
   const refresh = useCallback(async () => {
     try {
+      // No-op on web. On the mobile app, loads a previously-stored bearer
+      // token into memory before /me is called - otherwise a native app
+      // relaunch would look logged-out for a moment (no cookie exists there
+      // to fall back on) even though a valid stored session exists.
+      await restoreToken();
       const me = await getMe();
       setUser(me);
     } catch {

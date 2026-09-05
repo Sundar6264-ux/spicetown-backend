@@ -1652,6 +1652,107 @@ each open order's line items shown, not just its total.
   it's built: check the real log file for the actual HTTP status before assuming application logic is
   wrong.
 
+## Session: Mobile app Phase 1 - Capacitor wrap, dual auth, dual builds
+
+The user wants the web dashboard turned into a real installable mobile app (more features planned
+on top, e.g. native barcode scanning merged in from spicetown-labels). Decision made directly
+(the user's other planning AI - Gemini - wasn't cooperating, so this was reasoned through and
+committed to rather than left open): wrap the **existing** React app with **Capacitor** rather than
+rewrite in React Native or native Swift/Kotlin - reuses ~95% of already-built, already-verified UI,
+ships as a real App Store/Play Store binary (bundled locally, not a live-loaded webview - see
+below), and gets native plugin access (camera, push, filesystem/share) via JS.
+
+- **A real, easy-to-miss architecture fact surfaced while investigating this**: this skill's own
+  "Network exposure" line (Architecture section above) says tailnet-only `serve`, explicitly never
+  Funnel, reaffirmed once already. Live-checking `tailscale funnel status` this session found
+  **Funnel is actually ON for both the main backend (root, ->8000) and spicetown-labels (:8443)** -
+  a real drift from that documented decision, not something reversed deliberately in any session
+  note. Flagged to the user directly rather than silently treated as fine; they're already planning
+  to move off Tailscale to a real domain soon regardless, so this wasn't re-litigated further, but a
+  future session shouldn't assume the "tailnet-only, never Funneled" line is still accurate without
+  checking `tailscale funnel status` again.
+- **Domain migration readiness, per explicit user instruction** ("we'll stop using tailscale soon"):
+  nothing about the mobile build hardcodes today's Funnel URL in more than one place -
+  `frontend/.env.mobile`'s `VITE_API_BASE` is the single value to change before the next mobile
+  build/release. Not gitignored (no secret in it, just a public URL) - it's meant to be a visible,
+  committed one-line diff in git history when the domain changes.
+- **Dual auth, no new table needed**: sessions were already just an opaque token row in
+  `user_sessions`, looked up by the token itself as primary key - so the exact same token can be
+  delivered two ways instead of needing a separate device-token system. `app/auth.py::
+  get_current_user` now accepts the token via the existing cookie OR an `Authorization: Bearer`
+  header (`extract_bearer_token()`); `POST /api/auth/mobile-login` (new, `app/routers/auth.py`) does
+  the same credential check as `/login` but returns the raw token in the JSON body instead of
+  setting a cookie. **Deliberately a separate endpoint, not a change to `/login`'s response** -
+  adding `token` to the existing web login response would hand any web-page XSS a JS-readable token
+  where today only an httpOnly cookie exists, a real regression to the web app's security model for
+  no benefit to it. `logout()` now also accepts the token via header so a mobile client can actually
+  revoke its session server-side, not just forget it locally.
+- **Verified live, real end-to-end**, same throwaway-user pattern as every other feature in this
+  project: mobile-login issuing a real token, that token working as a Bearer header on `/me`, a
+  garbage/missing token correctly 401ing, logout actually revoking it (401 after), and the existing
+  cookie-based web login completely unaffected (still 200s normally) - all against a real throwaway
+  `uvicorn` process, cleaned up after.
+- **CORS**: `capacitor://localhost` (iOS) and `http://localhost` (Android's Capacitor default) added
+  to `CORS_ORIGINS` in the real `.env` (needs the usual backend restart - gotcha #2). Verified via a
+  real CORS preflight (`curl -X OPTIONS` with `Origin` header) that both are allowed and an
+  arbitrary untrusted origin is correctly rejected (400).
+- **Two separate frontend builds, on purpose - this is the one gotcha most likely to bite a future
+  session**: `npm run build` (web, `dist/`, relative `""` API base - correct since the backend
+  serves this directory same-origin) vs. `npm run build:mobile` (`vite build --mode mobile && npx
+  cap sync`, outputs to `dist-mobile/` per `vite.config.js`'s mode-based `outDir`, loads
+  `.env.mobile`'s absolute `VITE_API_BASE`). **These must never share an output directory** - a
+  mobile build landing in plain `dist/` would silently ship a hardcoded-today's-domain bundle to
+  every web visitor instead of the correct relative-path one, defeating the whole point of the
+  split. Confirmed by grepping both built bundles for the literal API host: present (bare, no port)
+  only in `dist-mobile/`, absent from `dist/` (which only has the unrelated `:8443` labels-app link,
+  a different hardcoded URL entirely - `LABELS_APP_URL`, not the API base). `capacitor.config.json`'s
+  `webDir` points at `dist-mobile`, never `dist`.
+- **Native file download -> share**: `src/downloadOrShare.js` (new) - web keeps the existing blob +
+  `<a download>` click unchanged; native writes the blob to the app's cache dir via
+  `@capacitor/filesystem` and hands it to `@capacitor/share`'s OS share sheet instead, since a
+  Capacitor WebView doesn't reliably trigger a browser-style download. Every blob-download call site
+  in `api.js` (PDF export, CSV report exports, the purchase-log sample CSV) now goes through this
+  one shared helper instead of duplicating the platform check three times.
+- **`src/mobileAuth.js`** (new): token storage via `@capacitor/preferences`, cached in memory after
+  first read (`restoreToken()`, called once by `AuthContext.jsx`'s `refresh()` before its first
+  `getMe()` call - without this, a relaunched mobile app would flash "logged out" every time even
+  with a valid stored session, since there's no cookie to fall back on there). Preferences-backed
+  storage, not a hardened Keychain-only plugin - acceptable for this app's current threat model
+  (revocation is instant server-side via the existing session-delete mechanism regardless of where
+  the token sits on-device); revisit only if a stricter requirement shows up later.
+- **Capacitor scaffold**: `com.spicetown.app` app ID, `ios/` and `android/` platform directories
+  added (both committed to git - their own generated `.gitignore`s already cover build
+  artifacts/Pods/gradle caches correctly, no hand-editing needed). iOS uses Swift Package Manager
+  for Capacitor's own plugins (no CocoaPods dependency, confirmed by `cap add ios`'s own output) -
+  this machine has Xcode but not CocoaPods, and it wasn't needed.
+- **Real verification, not just "the code looks right"**: built the actual iOS app for the
+  simulator (`xcodebuild -project App.xcodeproj -scheme App -sdk iphonesimulator`, succeeded),
+  installed and launched it in a real booted simulator (`xcrun simctl`), and took real screenshots
+  confirming the bundled React app actually renders (the real Spice Town login screen, matching the
+  web version) inside the native shell - not just that `npm run build`/`cap sync` exited 0. **Not
+  verified**: an actual login attempt through the simulator's UI (would need XCUITest/Appium-grade
+  automation to type into fields, out of scope for this session's tooling) - the mechanism was
+  instead verified in pieces (correct absolute URL baked into the bundle + CORS allowing the exact
+  WebView origin + the mobile-login endpoint itself, each confirmed separately). A real live login
+  through the actual public Funnel URL also can't be verified from here until the user restarts the
+  real backend daemon (gotcha #2) - none of this is live in production yet. Android has no SDK/
+  Android Studio on this machine, so only the project scaffold exists there, unbuilt/unverified.
+- **Two real, verifiable (not cosmetic-guess) mobile-web bugs fixed in `index.css`'s existing
+  `@media (max-width: 768px)` block**: any `input`/`select` under 16px font-size triggers WebKit's
+  auto-zoom-on-focus on iOS (was 0.88rem/14px - hit literally every text/date/search field in the
+  app); most buttons/inputs fell well under Apple's 44px minimum tappable target. Both are
+  deterministic, spec-level facts, not something requiring a device to "see" - fixed directly.
+  **Deliberately did NOT attempt a full stacked-card redesign of the dense data tables** (Reorder
+  Candidates, Supplier Projection, Inventory Reports, Reconciliation) in this pass - every one of
+  them already sits in a `.table-wrap` with `overflow-x: auto` (confirmed via grep - this was
+  already correctly in place, not new), so the "page itself scrolls sideways" failure mode doesn't
+  exist; a real per-table mobile card layout is a much larger, per-table design project that
+  couldn't be visually verified without a device/browser in this session, and was consciously left
+  as explicit future scope rather than rushed and shipped unverified.
+- **Not yet built**: barcode scanner plugin merge from spicetown-labels, push notifications, the
+  TanStack Query/offline-caching layer - these are Phase 2/3 per the plan discussed with the user,
+  not started this session.
+
 ## Keeping this skill current
 
 This file should be updated whenever a new non-obvious gotcha is found, a new major feature ships,
